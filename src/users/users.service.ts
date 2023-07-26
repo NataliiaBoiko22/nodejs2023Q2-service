@@ -1,26 +1,89 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdatePasswordDto } from './dto/update-user.dto';
+import { User } from './interface';
+import { v4 as uuidv4 } from 'uuid';
+const FORBIDDEN_STATUS = 403;
 
 @Injectable()
 export class UsersService {
+  private usersDB: User[] = [];
+
   create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+    const timestamp = new Date().getTime();
+    const newUser = {
+      id: uuidv4(),
+      login: createUserDto.login,
+      password: createUserDto.password,
+      version: 1,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    this.usersDB.push(newUser);
+    const { id, login, version, createdAt, updatedAt } = newUser;
+    return { id, login, version, createdAt, updatedAt };
   }
 
   findAll() {
-    return `This action returns all users`;
+    if (this.usersDB.length === 0) {
+      return [];
+    }
+
+    return this.usersDB.map((user) => ({
+      id: user.id,
+      login: user.login,
+      version: user.version,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    }));
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  findOne(id: string) {
+    const user: User | undefined = this.usersDB.find(
+      (user: User) => user.id === id,
+    );
+
+    if (user) {
+      return user;
+    } else {
+      return null;
+    }
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  updatePassword(id: string, updatePasswordDto: UpdatePasswordDto) {
+    const index = this.usersDB.findIndex((p) => p.id === id);
+    if (index >= 0) {
+      const user = this.usersDB[index];
+
+      if (updatePasswordDto.oldPassword === user.password) {
+        const upUserWithoutpass = {
+          id,
+          login: user.login,
+          version: +user.version + 1,
+          createdAt: user.createdAt,
+          updatedAt: +Date.now(),
+        };
+        this.usersDB[index] = {
+          ...upUserWithoutpass,
+          password: updatePasswordDto.newPassword,
+        };
+        return upUserWithoutpass;
+      } else {
+        return FORBIDDEN_STATUS;
+      }
+    } else {
+      return null;
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  remove(id: string) {
+    const index = this.usersDB.findIndex((user: User) => user.id === id);
+    if (index !== -1) {
+      this.usersDB.splice(index, 1);
+      return true;
+    } else {
+      return null;
+    }
   }
 }
