@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
-import { User } from './interface';
+// import { User } from './interface';
 import { v4 as uuidv4 } from 'uuid';
+import { User } from './entities/user.entity';
 const FORBIDDEN_STATUS = 403;
 
 @Injectable()
@@ -11,18 +12,18 @@ export class UsersService {
 
   create(createUserDto: CreateUserDto) {
     const timestamp = new Date().getTime();
-    const newUser = {
-      id: uuidv4(),
-      login: createUserDto.login,
-      password: createUserDto.password,
-      version: 1,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
+    const newUser = new User();
+    newUser.id = uuidv4();
+    newUser.login = createUserDto.login;
+    newUser.password = createUserDto.password;
+    newUser.version = 1;
+    newUser.createdAt = timestamp;
+    newUser.updatedAt = timestamp;
 
     this.usersDB.push(newUser);
     const { id, login, version, createdAt, updatedAt } = newUser;
     return { id, login, version, createdAt, updatedAt };
+    // return newUser;
   }
 
   findAll() {
