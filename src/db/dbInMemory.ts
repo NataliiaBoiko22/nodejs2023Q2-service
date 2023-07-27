@@ -7,7 +7,11 @@ export class InMemoryDBService {
   artists: Artist[] = [];
   tracks: Track[] = [];
   users: User[] = [];
-  favorites: Favorites[];
+  favorites: Favorites = {
+    artists: [],
+    albums: [],
+    tracks: [],
+  };
 
   private static _instance: InMemoryDBService;
 
