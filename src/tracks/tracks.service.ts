@@ -5,32 +5,24 @@ import {
 } from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
-import { v4, validate } from 'uuid';
+import { validate } from 'uuid';
 import { Track } from './entities/track.entity';
+import { InMemoryDB } from 'src/db/dbInMemory';
 
 @Injectable()
 export class TracksService {
-  private trackDB: Track[] = [];
   create(createTrackDto: CreateTrackDto) {
-    const newTrack = new Track();
-
-    newTrack.id = v4();
-    newTrack.name = createTrackDto.name;
-    newTrack.artistId = createTrackDto.artistId;
-    newTrack.albumId = createTrackDto.albumId;
-    newTrack.duration = createTrackDto.duration;
-
-    this.trackDB.push(newTrack);
-
+    const newTrack = new Track(createTrackDto);
+    InMemoryDB.tracks.push(newTrack);
     return newTrack;
   }
 
   findAll(): Track[] {
-    return this.trackDB;
+    return InMemoryDB.tracks;
   }
 
   findOne(id: string) {
-    const track = this.trackDB.find((element) => element.id === id);
+    const track = InMemoryDB.tracks.find((element) => element.id === id);
 
     if (!validate(id)) {
       throw new BadRequestException();
@@ -44,47 +36,25 @@ export class TracksService {
   }
 
   update(id: string, updateTrackDto: UpdateTrackDto) {
-    const index = this.trackDB.findIndex((p) => p.id === id);
+    const index = InMemoryDB.tracks.findIndex((p) => p.id === id);
     if (index >= 0) {
       const upTrack = {
         id,
-        name: updateTrackDto.name || this.trackDB[index].name,
-        albumId: updateTrackDto.albumId || this.trackDB[index].albumId,
-        artistId: updateTrackDto.artistId || this.trackDB[index].artistId,
-        duration: updateTrackDto.duration || +this.trackDB[index].duration,
+        name: updateTrackDto.name || InMemoryDB.tracks[index].name,
+        albumId: updateTrackDto.albumId || InMemoryDB.tracks[index].albumId,
+        artistId: updateTrackDto.artistId || InMemoryDB.tracks[index].artistId,
+        duration: updateTrackDto.duration || +InMemoryDB.tracks[index].duration,
       };
-      this.trackDB[index] = upTrack;
+      InMemoryDB.tracks[index] = upTrack;
       return upTrack;
     } else {
       return null;
     }
   }
 
-  // remove(id: string, updateTrackDto: UpdateTrackDto) {
-  //   const tracks = this.findAll();
-  //   let count = 0;
-  //   tracks.forEach((track) => {
-  //     if (id === track.artistId || id === track.albumId) {
-  //       this.update(track.id, updateTrackDto);
-  //       count++;
-  //     }
-  //   });
-
-  //   return count;
-  // }
   remove(id: string) {
     const trackToDelete = this.findOne(id);
-
-    this.trackDB = this.trackDB.filter((el) => el.id !== id);
-
-    if (!validate(id)) {
-      throw new BadRequestException();
-    }
-
-    if (!trackToDelete) {
-      throw new NotFoundException();
-    }
-
-    return trackToDelete || null;
+    InMemoryDB.tracks = InMemoryDB.tracks.filter((el) => el.id !== id);
+    return trackToDelete;
   }
 }

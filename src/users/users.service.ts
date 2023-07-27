@@ -1,47 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
-// import { User } from './interface';
-import { v4 as uuidv4 } from 'uuid';
 import { User } from './entities/user.entity';
+import { InMemoryDB } from 'src/db/dbInMemory';
 const FORBIDDEN_STATUS = 403;
 
 @Injectable()
 export class UsersService {
-  private usersDB: User[] = [];
-
   create(createUserDto: CreateUserDto) {
-    const timestamp = new Date().getTime();
-    const newUser = new User();
-    newUser.id = uuidv4();
-    newUser.login = createUserDto.login;
-    newUser.password = createUserDto.password;
-    newUser.version = 1;
-    newUser.createdAt = timestamp;
-    newUser.updatedAt = timestamp;
-
-    this.usersDB.push(newUser);
+    const newUser = new User(createUserDto);
+    InMemoryDB.users.push(newUser);
     const { id, login, version, createdAt, updatedAt } = newUser;
     return { id, login, version, createdAt, updatedAt };
-    // return newUser;
   }
 
   findAll() {
-    if (this.usersDB.length === 0) {
+    if (InMemoryDB.users.length === 0) {
       return [];
     }
-
-    return this.usersDB.map((user) => ({
-      id: user.id,
-      login: user.login,
-      version: user.version,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    }));
+    return InMemoryDB.users;
   }
 
   findOne(id: string) {
-    const user: User | undefined = this.usersDB.find(
+    const user: User | undefined = InMemoryDB.users.find(
       (user: User) => user.id === id,
     );
 
@@ -53,9 +34,9 @@ export class UsersService {
   }
 
   updatePassword(id: string, updatePasswordDto: UpdatePasswordDto) {
-    const index = this.usersDB.findIndex((p) => p.id === id);
+    const index = InMemoryDB.users.findIndex((p) => p.id === id);
     if (index >= 0) {
-      const user = this.usersDB[index];
+      const user = InMemoryDB.users[index];
 
       if (updatePasswordDto.oldPassword === user.password) {
         const upUserWithoutpass = {
@@ -65,7 +46,7 @@ export class UsersService {
           createdAt: user.createdAt,
           updatedAt: +Date.now(),
         };
-        this.usersDB[index] = {
+        InMemoryDB.users[index] = {
           ...upUserWithoutpass,
           password: updatePasswordDto.newPassword,
         };
@@ -79,9 +60,10 @@ export class UsersService {
   }
 
   remove(id: string) {
-    const index = this.usersDB.findIndex((user: User) => user.id === id);
-    if (index !== -1) {
-      this.usersDB.splice(index, 1);
+    const user = this.findOne(id);
+
+    if (user) {
+      InMemoryDB.users = InMemoryDB.users.filter((u: User) => u.id !== id);
       return true;
     } else {
       return null;

@@ -11,9 +11,7 @@ import {
   ForbiddenException,
   HttpCode,
 } from '@nestjs/common';
-// import { UserResponse } from './interface';
 import { UsersService } from './users.service';
-import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
 import { validate as uuidValidate } from 'uuid';
@@ -29,9 +27,6 @@ export class UsersController {
     if (!createUserDto.login || !createUserDto.password) {
       throw new BadRequestException('Login and password are required');
     }
-    // const user: User | null = this.usersService.create(createUserDto);
-    // return user;
-
     return this.usersService.create(createUserDto);
   }
 

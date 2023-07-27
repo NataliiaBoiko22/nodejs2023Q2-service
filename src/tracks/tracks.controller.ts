@@ -22,7 +22,7 @@ export class TracksController {
   @Post()
   create(@Body() createTrackDto: CreateTrackDto) {
     if (!createTrackDto.name || !createTrackDto.duration) {
-      throw new BadRequestException('Login and password are required');
+      throw new BadRequestException('Name and duration are required');
     }
     return this.tracksService.create(createTrackDto);
   }
@@ -43,13 +43,11 @@ export class TracksController {
       throw new BadRequestException('Invalid track id');
     }
     if (!updateTrackDto.name || !updateTrackDto.duration) {
-      throw new BadRequestException(
-        'Old password and new password are required',
-      );
+      throw new BadRequestException('Name and new duration are required');
     }
     const track = this.tracksService.update(id, updateTrackDto);
-    if (track === null) {
-      throw new NotFoundException('User not found');
+    if (!track) {
+      throw new NotFoundException('Track not found');
     }
     return track;
   }
@@ -57,6 +55,12 @@ export class TracksController {
   @Delete(':id')
   @HttpCode(204)
   remove(@Param('id') id: string) {
-    return this.tracksService.remove(id);
+    if (!uuidValidate(id)) {
+      throw new BadRequestException('Invalid track id');
+    }
+    const track = this.tracksService.remove(id);
+    if (!track) {
+      throw new NotFoundException('User not found');
+    }
   }
 }
