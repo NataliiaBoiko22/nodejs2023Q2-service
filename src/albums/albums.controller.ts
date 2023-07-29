@@ -22,7 +22,9 @@ export class AlbumsController {
   @Post()
   create(@Body() createAlbumDto: CreateAlbumDto) {
     if (!createAlbumDto.name || !createAlbumDto.year) {
-      throw new BadRequestException('Name and year are required');
+      throw new BadRequestException(
+        'Bad request. body does not contain required fields',
+      );
     }
     return this.albumsService.create(createAlbumDto);
   }
@@ -39,14 +41,20 @@ export class AlbumsController {
   @Put(':id')
   update(@Param('id') id: string, @Body() updateAlbumDto: UpdateAlbumDto) {
     if (!uuidValidate(id)) {
-      throw new BadRequestException('Invalid album id');
+      throw new BadRequestException(
+        'Bad request. albumId is invalid (not uuid)',
+      );
     }
     if (!updateAlbumDto) {
-      throw new BadRequestException('Name and year are required');
+      throw new BadRequestException(
+        'Bad request. body does not contain required fields',
+      );
     }
     if (updateAlbumDto?.artistId) {
       if (!uuidValidate(updateAlbumDto.artistId)) {
-        throw new BadRequestException('Invalid artist id');
+        throw new BadRequestException(
+          'Bad request. artistId is invalid (not uuid)',
+        );
       }
     }
     const album = this.albumsService.update(id, updateAlbumDto);

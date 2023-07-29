@@ -25,7 +25,9 @@ export class UsersController {
   @HttpCode(201)
   create(@Body() createUserDto: CreateUserDto) {
     if (!createUserDto.login || !createUserDto.password) {
-      throw new BadRequestException('Login and password are required');
+      throw new BadRequestException(
+        'Bad request. Body does not contain required fields.',
+      );
     }
     return this.usersService.create(createUserDto);
   }
@@ -38,7 +40,9 @@ export class UsersController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     if (!uuidValidate(id)) {
-      throw new BadRequestException('Invalid user id');
+      throw new BadRequestException(
+        'Bad request. userId is invalid (not uuid)',
+      );
     }
     const user = this.usersService.findOne(id);
     if (!user) {
@@ -54,16 +58,18 @@ export class UsersController {
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
     if (!uuidValidate(id)) {
-      throw new BadRequestException('Invalid user id');
+      throw new BadRequestException(
+        'Bad request. userId is invalid (not uuid)',
+      );
     }
     if (!updatePasswordDto.oldPassword || !updatePasswordDto.newPassword) {
       throw new BadRequestException(
-        'Old password and new password are required',
+        'Bad request. Body does not contain required fields.',
       );
     }
     const user = this.usersService.updatePassword(id, updatePasswordDto);
     if (user === FORBIDDEN_STATUS) {
-      throw new ForbiddenException('FORBIDDEN');
+      throw new ForbiddenException('oldPassword is wrong');
     }
     if (user === null) {
       throw new NotFoundException('User not found');
@@ -75,7 +81,9 @@ export class UsersController {
   @HttpCode(204)
   remove(@Param('id') id: string) {
     if (!uuidValidate(id)) {
-      throw new BadRequestException('Invalid user id');
+      throw new BadRequestException(
+        'Bad request. userId is invalid (not uuid)',
+      );
     }
     const user = this.usersService.remove(id);
     if (!user) {

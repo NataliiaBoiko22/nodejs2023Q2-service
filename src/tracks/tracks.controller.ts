@@ -22,7 +22,9 @@ export class TracksController {
   @Post()
   create(@Body() createTrackDto: CreateTrackDto) {
     if (!createTrackDto.name || !createTrackDto.duration) {
-      throw new BadRequestException('Name and duration are required');
+      throw new BadRequestException(
+        'Bad request. body does not contain required fields',
+      );
     }
     return this.tracksService.create(createTrackDto);
   }
@@ -40,10 +42,14 @@ export class TracksController {
   @Put(':id')
   update(@Param('id') id: string, @Body() updateTrackDto: UpdateTrackDto) {
     if (!uuidValidate(id)) {
-      throw new BadRequestException('Invalid track id');
+      throw new BadRequestException(
+        'Bad request. trackId is invalid (not uuid)',
+      );
     }
     if (!updateTrackDto.name || !updateTrackDto.duration) {
-      throw new BadRequestException('Name and new duration are required');
+      throw new BadRequestException(
+        'Bad request. body does not contain required fields',
+      );
     }
     const track = this.tracksService.update(id, updateTrackDto);
     if (!track) {
@@ -56,11 +62,13 @@ export class TracksController {
   @HttpCode(204)
   remove(@Param('id') id: string) {
     if (!uuidValidate(id)) {
-      throw new BadRequestException('Invalid track id');
+      throw new BadRequestException(
+        'Bad request. trackId is invalid (not uuid)',
+      );
     }
     const track = this.tracksService.remove(id);
     if (!track) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Track not found');
     }
   }
 }

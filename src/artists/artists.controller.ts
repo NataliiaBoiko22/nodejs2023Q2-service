@@ -22,7 +22,9 @@ export class ArtistsController {
   @Post()
   create(@Body() createArtistDto: CreateArtistDto) {
     if (!createArtistDto.name || !createArtistDto.grammy) {
-      throw new BadRequestException('Name and grammy are required');
+      throw new BadRequestException(
+        'Bad request. body does not contain required fields',
+      );
     }
     return this.artistsService.create(createArtistDto);
   }
@@ -40,7 +42,9 @@ export class ArtistsController {
   @Put(':id')
   update(@Param('id') id: string, @Body() updateArtistDto: UpdateArtistDto) {
     if (!uuidValidate(id)) {
-      throw new BadRequestException('Invalid artist id');
+      throw new BadRequestException(
+        'Bad request. artistId is invalid (not uuid)',
+      );
     }
     if (
       !updateArtistDto ||
@@ -49,7 +53,7 @@ export class ArtistsController {
       typeof updateArtistDto.grammy !== 'boolean'
     ) {
       throw new BadRequestException(
-        'Invalid update data. Name and grammy (as a boolean) are required.',
+        'Bad request. body does not contain required fields',
       );
     }
 
@@ -64,7 +68,9 @@ export class ArtistsController {
   @HttpCode(204)
   remove(@Param('id') id: string) {
     if (!uuidValidate(id)) {
-      throw new BadRequestException('Invalid artist id');
+      throw new BadRequestException(
+        'Bad request. artistId is invalid (not uuid)',
+      );
     }
     const artist = this.artistsService.remove(id);
     if (!artist) {
