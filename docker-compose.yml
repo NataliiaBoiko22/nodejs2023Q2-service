@@ -1,8 +1,41 @@
 version: '3.0'
 
 services:
- my-api:
-  image: my-http
-  build: .
-  ports:
-   - "4000:4000"
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: app
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    ports:
+      - ${APP_PORT}:${PORT}
+    networks:
+      - custom-network
+
+  postgres:
+    build:
+      context: ./postgres
+      dockerfile: ./Dockerfile
+    container_name: postgres
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER:${POSTGRES_USER}
+      - POSTGRES_PASSWORD:${POSTGRES_PASSWORD}
+      - POSTGRES_DB:${POSTGRES_DB}
+      - PGDATA:${PGDATA}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_CONTAINER_PORT}
+    networks:
+      - custom-network
+    volumes:
+      - ./pg_data:${PGDATA}
+
+networks:
+  custom-network:
+    name: custom-network
+    driver: bridge
+
