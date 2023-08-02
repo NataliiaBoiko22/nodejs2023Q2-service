@@ -35,7 +35,7 @@ services:
       - ./pg_data:${PGDATA}
 
 networks:
-  custom-network:
+  my-network:
     name: my-network
     driver: bridge
 
