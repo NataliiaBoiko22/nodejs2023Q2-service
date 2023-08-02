@@ -8,6 +8,8 @@ WORKDIR /app
 
 COPY package*.json ./
 
+RUN apk update && apk add --no-cache postgresql-client
+
 RUN npm install
 
 COPY . .

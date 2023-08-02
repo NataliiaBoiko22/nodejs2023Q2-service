@@ -4,9 +4,12 @@ import { UpdatePasswordDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { InMemoryDB } from 'src/db/dbInMemory';
 const FORBIDDEN_STATUS = 403;
-
+import { PrismaService } from 'src/prisma/prisma.service';
+import { v4, validate } from 'uuid';
 @Injectable()
 export class UsersService {
+  constructor(private prisma: PrismaService) {}
+
   create(createUserDto: CreateUserDto) {
     const newUser = new User(createUserDto);
     InMemoryDB.users.push(newUser);
@@ -14,14 +17,14 @@ export class UsersService {
     return { id, login, version, createdAt, updatedAt };
   }
 
-  findAll() {
+  async findAll() {
     if (InMemoryDB.users.length === 0) {
       return [];
     }
     return InMemoryDB.users;
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     const user: User | undefined = InMemoryDB.users.find(
       (user: User) => user.id === id,
     );

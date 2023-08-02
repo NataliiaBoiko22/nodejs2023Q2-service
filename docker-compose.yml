@@ -13,7 +13,7 @@ services:
     ports:
       - ${APP_PORT}:${PORT}
     networks:
-      - custom-network
+      - my-network
 
   postgres:
     build:
@@ -30,12 +30,12 @@ services:
     ports:
       - ${POSTGRES_PORT}:${POSTGRES_CONTAINER_PORT}
     networks:
-      - custom-network
+      - my-network
     volumes:
       - ./pg_data:${PGDATA}
 
 networks:
   custom-network:
-    name: custom-network
+    name: my-network
     driver: bridge
 
