@@ -10,66 +10,101 @@ import { v4, validate } from 'uuid';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  create(createUserDto: CreateUserDto) {
-    const newUser = new User(createUserDto);
-    InMemoryDB.users.push(newUser);
-    const { id, login, version, createdAt, updatedAt } = newUser;
-    return { id, login, version, createdAt, updatedAt };
+  async create(createUserDto: CreateUserDto) {
+    const user = await this.prisma.user.create({
+      data: {
+        ...createUserDto,
+      },
+    });
+    return {
+      ...user,
+    };
+    // const newUser = new User(createUserDto);
+    // InMemoryDB.users.push(newUser);
+    // const { id, login, version, createdAt, updatedAt } = newUser;
+    // return { id, login, version, createdAt, updatedAt };
   }
 
   async findAll() {
-    if (InMemoryDB.users.length === 0) {
-      return [];
-    }
-    return InMemoryDB.users;
+    return this.prisma.user.findMany();
+    // if (InMemoryDB.users.length === 0) {
+    //   return [];
+    // }
+    // return InMemoryDB.users;
   }
 
   async findOne(id: string) {
-    const user: User | undefined = InMemoryDB.users.find(
-      (user: User) => user.id === id,
-    );
+    const user = await this.prisma.user.findUnique({ where: { id } });
 
-    if (user) {
-      return user;
-    } else {
-      return null;
-    }
+    return user || null;
+    // const user: User | undefined = InMemoryDB.users.find(
+    //   (user: User) => user.id === id,
+    // );
+
+    // if (user) {
+    //   return user;
+    // } else {
+    //   return null;
+    // }
   }
 
-  updatePassword(id: string, updatePasswordDto: UpdatePasswordDto) {
-    const index = InMemoryDB.users.findIndex((p) => p.id === id);
-    if (index >= 0) {
-      const user = InMemoryDB.users[index];
+  async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto) {
+    const userToUpdate = await this.prisma.user.findUnique({ where: { id } });
 
-      if (updatePasswordDto.oldPassword === user.password) {
-        const upUserWithoutpass = {
-          id,
-          login: user.login,
-          version: +user.version + 1,
-          createdAt: user.createdAt,
-          updatedAt: +Date.now(),
-        };
-        InMemoryDB.users[index] = {
-          ...upUserWithoutpass,
-          password: updatePasswordDto.newPassword,
-        };
-        return upUserWithoutpass;
-      } else {
-        return FORBIDDEN_STATUS;
-      }
-    } else {
-      return null;
+    Object.assign(userToUpdate, {
+      password: updatePasswordDto.newPassword,
+      version: userToUpdate.version + 1,
+      updatedAt: Date.now(),
+    });
+
+    await this.prisma.user.update({
+      where: { id },
+      data: userToUpdate,
+    });
+    if (userToUpdate.password !== updatePasswordDto.oldPassword) {
+      return FORBIDDEN_STATUS;
     }
+    return userToUpdate;
+
+    // const index = InMemoryDB.users.findIndex((p) => p.id === id);
+    // if (index >= 0) {
+    //   const user = InMemoryDB.users[index];
+
+    //   if (updatePasswordDto.oldPassword === user.password) {
+    //     const upUserWithoutpass = {
+    //       id,
+    //       login: user.login,
+    //       version: +user.version + 1,
+    //       createdAt: user.createdAt,
+    //       updatedAt: +Date.now(),
+    //     };
+    //     InMemoryDB.users[index] = {
+    //       ...upUserWithoutpass,
+    //       password: updatePasswordDto.newPassword,
+    //     };
+    //     return upUserWithoutpass;
+    //   } else {
+    //     return FORBIDDEN_STATUS;
+    //   }
+    // } else {
+    //   return null;
+    // }
   }
 
-  remove(id: string) {
-    const user = this.findOne(id);
+  async remove(id: string) {
+    const userToDelete = await this.prisma.user.findUnique({ where: { id } });
 
-    if (user) {
-      InMemoryDB.users = InMemoryDB.users.filter((u: User) => u.id !== id);
-      return true;
-    } else {
-      return null;
-    }
+    await this.prisma.user.delete({ where: { id } });
+
+    return userToDelete;
   }
+  //   const user = this.findOne(id);
+
+  //   if (user) {
+  //     InMemoryDB.users = InMemoryDB.users.filter((u: User) => u.id !== id);
+  //     return true;
+  //   } else {
+  //     return null;
+  //   }
+  // }
 }

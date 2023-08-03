@@ -12,8 +12,9 @@ async function bootstrap() {
   applyGlobalPipes(app);
   const document = await loadSwaggerDocument();
   SwaggerModule.setup('doc', app, document);
-  const port = process.env.PORT || 4000;
-  await app.listen(port);
+  const port = process.env.APP_PORT || 4000;
+  console.log(`---port: ${port}`);
+  await app.listen(port, '0.0.0.0');
 }
 function applyGlobalInterceptors(app) {
   const reflector = app.get(Reflector);

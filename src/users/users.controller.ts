@@ -53,7 +53,7 @@ export class UsersController {
   }
 
   @Put(':id')
-  updatePassword(
+  async updatePassword(
     @Param('id') id: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
@@ -67,7 +67,7 @@ export class UsersController {
         'Bad request. Body does not contain required fields.',
       );
     }
-    const user = this.usersService.updatePassword(id, updatePasswordDto);
+    const user = await this.usersService.updatePassword(id, updatePasswordDto);
     if (user === FORBIDDEN_STATUS) {
       throw new ForbiddenException('oldPassword is wrong');
     }
