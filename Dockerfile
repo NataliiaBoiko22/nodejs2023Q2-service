@@ -1,15 +1,13 @@
- FROM node:lts-alpine
+FROM node:18.17-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package*.json .
 
-RUN npm install
+RUN npm install && npm cache clean --force
 
 COPY . .
 
-EXPOSE ${APP_PORT}
+EXPOSE ${PORT}
 
-RUN npm run build
-
-CMD [ "npm", "run", "start:dev" ]
+CMD ["npm", "run", "start:migration_dev"]

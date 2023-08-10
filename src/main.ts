@@ -2,19 +2,19 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { SwaggerModule } from '@nestjs/swagger';
 import { readFile } from 'fs/promises';
-import { dirname, join } from 'path';
 import { parse } from 'yaml';
 import { AppModule } from './app.module';
-
+import { resolve } from 'path';
+import { cwd } from 'process';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   applyGlobalInterceptors(app);
   applyGlobalPipes(app);
   const document = await loadSwaggerDocument();
   SwaggerModule.setup('doc', app, document);
-  const port = process.env.APP_PORT || 4000;
-  console.log(`---port: ${port}`);
-  await app.listen(port, '0.0.0.0');
+  const port = process.env.PORT || 4000;
+  await app.listen(port);
+  console.log(`Server ready at http://localhost:${port}`);
 }
 function applyGlobalInterceptors(app) {
   const reflector = app.get(Reflector);
@@ -26,8 +26,9 @@ function applyGlobalPipes(app) {
   );
 }
 async function loadSwaggerDocument() {
-  const rootDirname = dirname(__dirname);
-  const docFile = await readFile(join(rootDirname, 'doc', 'api.yaml'), 'utf-8');
+  const docFile = await readFile(resolve(cwd(), 'doc', 'api.yaml'), {
+    encoding: 'utf8',
+  });
   return parse(docFile);
 }
 

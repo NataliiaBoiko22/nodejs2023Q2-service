@@ -1,56 +1,72 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { Album } from './entities/album.entity';
-import { validate } from 'uuid';
-import { InMemoryDB } from 'src/db/dbInMemory';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DeleteResult, Repository } from 'typeorm';
+import { ArtistsService } from '../artists/artists.service';
 @Injectable()
 export class AlbumsService {
-  create(createAlbumDto: CreateAlbumDto) {
-    const newAlbum = new Album(createAlbumDto);
-    InMemoryDB.albums.push(newAlbum);
-    return newAlbum;
-  }
+  constructor(
+    @InjectRepository(Album)
+    private albumService: Repository<Album>,
+    private artistService: ArtistsService,
+  ) {}
 
-  findAll(): Album[] {
-    return InMemoryDB.albums;
-  }
+  private checkAndMakeCorrectIdArtist = async (
+    options: CreateAlbumDto | UpdateAlbumDto,
+  ): Promise<void> => {
+    const artist = await this.artistService.findOne(options.artistId);
 
-  findOne(id: string) {
-    const album = InMemoryDB.albums.find((element) => element.id === id);
-    if (!validate(id)) {
-      throw new BadRequestException();
+    if (!artist) {
+      options.artistId = null;
     }
+  };
+
+  async create(createAlbumDto: CreateAlbumDto): Promise<Album> {
+    if (createAlbumDto.artistId) {
+      await this.checkAndMakeCorrectIdArtist(createAlbumDto);
+    }
+
+    const album = await this.albumService.create(createAlbumDto);
+
+    return await this.albumService.save(album);
+  }
+
+  async findAll(): Promise<Array<Album>> {
+    return await this.albumService.find();
+  }
+
+  async findOne(id: string): Promise<Album | null> {
+    return await this.albumService.findOneBy({ id });
+  }
+
+  async update(
+    id: string,
+    updateAlbumDto: UpdateAlbumDto,
+  ): Promise<Album | null> {
+    if (updateAlbumDto.artistId) {
+      await this.checkAndMakeCorrectIdArtist(updateAlbumDto);
+    }
+
+    const album = await this.albumService.findOneBy({ id });
+
     if (!album) {
-      throw new NotFoundException();
-    }
-    return album || null;
-  }
-
-  update(id: string, updateAlbumDto: UpdateAlbumDto): Album {
-    const index = InMemoryDB.albums.findIndex((p) => p.id === id);
-    if (index >= 0) {
-      const updAlbum = {
-        id,
-        name: updateAlbumDto.name || InMemoryDB.albums[index].name,
-        year: updateAlbumDto.year || +InMemoryDB.albums[index].year,
-        artistId: updateAlbumDto.artistId || InMemoryDB.albums[index].artistId,
-      };
-      InMemoryDB.albums[index] = updAlbum;
-      return updAlbum;
-    } else {
       return null;
     }
+
+    await this.albumService.update({ id }, updateAlbumDto);
+
+    return await this.albumService.findOneBy({ id });
   }
 
-  remove(id: string) {
-    const album = this.findOne(id);
-    InMemoryDB.setAlbumIdtoNull(album.id);
-    InMemoryDB.albums = InMemoryDB.albums.filter((el) => el.id !== id);
-    return true;
+  async remove(id: string): Promise<DeleteResult> {
+    const album = await this.albumService.findOneBy({ id });
+
+    if (!album) {
+      return null;
+    }
+
+    return await this.albumService.delete({ id });
   }
 }

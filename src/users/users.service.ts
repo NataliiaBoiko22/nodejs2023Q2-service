@@ -1,110 +1,71 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { compare, hash } from 'bcrypt';
 import { User } from './entities/user.entity';
-import { InMemoryDB } from 'src/db/dbInMemory';
-const FORBIDDEN_STATUS = 403;
-import { PrismaService } from 'src/prisma/prisma.service';
-import { v4, validate } from 'uuid';
+import { DeleteResult, Repository } from 'typeorm';
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
 
-  async create(createUserDto: CreateUserDto) {
-    const user = await this.prisma.user.create({
-      data: {
-        ...createUserDto,
-      },
-    });
-    return {
-      ...user,
-    };
-    // const newUser = new User(createUserDto);
-    // InMemoryDB.users.push(newUser);
-    // const { id, login, version, createdAt, updatedAt } = newUser;
-    // return { id, login, version, createdAt, updatedAt };
-  }
-
-  async findAll() {
-    return this.prisma.user.findMany();
-    // if (InMemoryDB.users.length === 0) {
-    //   return [];
-    // }
-    // return InMemoryDB.users;
-  }
-
-  async findOne(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-
-    return user || null;
-    // const user: User | undefined = InMemoryDB.users.find(
-    //   (user: User) => user.id === id,
-    // );
-
-    // if (user) {
-    //   return user;
-    // } else {
-    //   return null;
-    // }
-  }
-
-  async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto) {
-    const userToUpdate = await this.prisma.user.findUnique({ where: { id } });
-
-    Object.assign(userToUpdate, {
-      password: updatePasswordDto.newPassword,
-      version: userToUpdate.version + 1,
-      updatedAt: Date.now(),
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    const user = this.userRepository.create({
+      login: createUserDto.login,
+      password: await hash(
+        createUserDto.password,
+        Number(process.env.CRYPT_SALT),
+      ),
     });
 
-    await this.prisma.user.update({
-      where: { id },
-      data: userToUpdate,
-    });
-    if (userToUpdate.password !== updatePasswordDto.oldPassword) {
-      return FORBIDDEN_STATUS;
+    return await this.userRepository.save(user);
+  }
+
+  async findAll(): Promise<Array<User>> {
+    return await this.userRepository.find();
+  }
+
+  async findByLogin(login: string): Promise<User> {
+    return await this.userRepository.findOneBy({ login });
+  }
+
+  async findOne(id: string): Promise<User> {
+    return await this.userRepository.findOneBy({ id });
+  }
+
+  async update(
+    id: string,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<User | string> {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      return null;
     }
-    return userToUpdate;
+    if (!(await compare(updatePasswordDto.oldPassword, user.password))) {
+      throw new ForbiddenException('oldPassword is wrong');
+    }
+    const userUpdated = {
+      password: await hash(
+        updatePasswordDto.newPassword,
+        Number(process.env.CRYPT_SALT),
+      ),
+    };
 
-    // const index = InMemoryDB.users.findIndex((p) => p.id === id);
-    // if (index >= 0) {
-    //   const user = InMemoryDB.users[index];
+    await this.userRepository.update({ id }, userUpdated);
 
-    //   if (updatePasswordDto.oldPassword === user.password) {
-    //     const upUserWithoutpass = {
-    //       id,
-    //       login: user.login,
-    //       version: +user.version + 1,
-    //       createdAt: user.createdAt,
-    //       updatedAt: +Date.now(),
-    //     };
-    //     InMemoryDB.users[index] = {
-    //       ...upUserWithoutpass,
-    //       password: updatePasswordDto.newPassword,
-    //     };
-    //     return upUserWithoutpass;
-    //   } else {
-    //     return FORBIDDEN_STATUS;
-    //   }
-    // } else {
-    //   return null;
-    // }
+    return await this.userRepository.findOneBy({ id });
   }
 
-  async remove(id: string) {
-    const userToDelete = await this.prisma.user.findUnique({ where: { id } });
+  async remove(id: string): Promise<DeleteResult> {
+    const user = await this.userRepository.findOneBy({ id });
 
-    await this.prisma.user.delete({ where: { id } });
+    if (!user) {
+      return null;
+    }
 
-    return userToDelete;
+    return await this.userRepository.delete({ id });
   }
-  //   const user = this.findOne(id);
-
-  //   if (user) {
-  //     InMemoryDB.users = InMemoryDB.users.filter((u: User) => u.id !== id);
-  //     return true;
-  //   } else {
-  //     return null;
-  //   }
-  // }
 }

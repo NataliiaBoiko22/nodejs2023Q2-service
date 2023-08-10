@@ -1,60 +1,50 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
-import { validate } from 'uuid';
 import { Track } from './entities/track.entity';
-import { InMemoryDB } from 'src/db/dbInMemory';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 
 @Injectable()
 export class TracksService {
-  create(createTrackDto: CreateTrackDto) {
-    const newTrack = new Track(createTrackDto);
-    InMemoryDB.tracks.push(newTrack);
-    return newTrack;
+  constructor(
+    @InjectRepository(Track)
+    private tracksService: Repository<Track>,
+  ) {}
+
+  async create(createTrackDto: CreateTrackDto): Promise<Track> {
+    const track = this.tracksService.create(createTrackDto);
+
+    return await this.tracksService.save(track);
   }
 
-  findAll(): Track[] {
-    return InMemoryDB.tracks;
+  async findAll(): Promise<Array<Track>> {
+    return await this.tracksService.find();
   }
 
-  findOne(id: string) {
-    const track = InMemoryDB.tracks.find((element) => element.id === id);
+  async findOne(id: string): Promise<Track> {
+    return await this.tracksService.findOneBy({ id });
+  }
 
-    if (!validate(id)) {
-      throw new BadRequestException();
-    }
+  async update(id: string, updateTrackDto: UpdateTrackDto): Promise<Track> {
+    const track = await this.tracksService.findOneBy({ id });
 
     if (!track) {
-      throw new NotFoundException();
-    }
-
-    return track || null;
-  }
-
-  update(id: string, updateTrackDto: UpdateTrackDto) {
-    const index = InMemoryDB.tracks.findIndex((p) => p.id === id);
-    if (index >= 0) {
-      const upTrack = {
-        id,
-        name: updateTrackDto.name || InMemoryDB.tracks[index].name,
-        albumId: updateTrackDto.albumId || InMemoryDB.tracks[index].albumId,
-        artistId: updateTrackDto.artistId || InMemoryDB.tracks[index].artistId,
-        duration: updateTrackDto.duration || +InMemoryDB.tracks[index].duration,
-      };
-      InMemoryDB.tracks[index] = upTrack;
-      return upTrack;
-    } else {
       return null;
     }
+
+    await this.tracksService.update({ id }, updateTrackDto);
+
+    return await this.tracksService.findOneBy({ id });
   }
 
-  remove(id: string) {
-    const trackToDelete = this.findOne(id);
-    InMemoryDB.tracks = InMemoryDB.tracks.filter((el) => el.id !== id);
-    return trackToDelete;
+  async remove(id: string): Promise<DeleteResult> {
+    const track = await this.tracksService.findOneBy({ id });
+
+    if (!track) {
+      return null;
+    }
+
+    return await this.tracksService.delete({ id });
   }
 }

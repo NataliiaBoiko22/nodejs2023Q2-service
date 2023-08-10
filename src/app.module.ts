@@ -6,16 +6,19 @@ import { TracksModule } from './tracks/tracks.module';
 import { AlbumsModule } from './albums/albums.module';
 import { ArtistsModule } from './artists/artists.module';
 import { FavoritesModule } from './favorites/favorites.module';
-import { PrismaModule } from './prisma/prisma.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { dataSourceConfig } from './ormconfig';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    TypeOrmModule.forRoot(dataSourceConfig),
     UsersModule,
     TracksModule,
     AlbumsModule,
     ArtistsModule,
     FavoritesModule,
-    PrismaModule,
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '../.env' }),
   ],
   controllers: [AppController],
   providers: [AppService],

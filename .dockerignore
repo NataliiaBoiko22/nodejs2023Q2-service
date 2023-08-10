@@ -1,8 +1,12 @@
-node_modules
+/dist
+/node_modules
 .git
 Dockerfile
 .md
 /logs/*.log
 pgdata
 pg_data
-.md
+.idea
+.helpers/
+
+.env

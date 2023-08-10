@@ -15,31 +15,48 @@ import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { validate as uuidValidate } from 'uuid';
 
-@Controller({ path: 'album' })
+@Controller('album')
 export class AlbumsController {
   constructor(private readonly albumsService: AlbumsService) {}
 
   @Post()
-  create(@Body() createAlbumDto: CreateAlbumDto) {
+  async create(@Body() createAlbumDto: CreateAlbumDto) {
     if (!createAlbumDto.name || !createAlbumDto.year) {
       throw new BadRequestException(
         'Bad request. body does not contain required fields',
       );
     }
-    return this.albumsService.create(createAlbumDto);
+    return await this.albumsService.create(createAlbumDto);
   }
+
   @Get()
-  findAll() {
-    return this.albumsService.findAll();
+  async findAll() {
+    return await this.albumsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.albumsService.findOne(id);
+  async findOne(
+    @Param('id')
+    id: string,
+  ) {
+    if (!uuidValidate(id)) {
+      throw new BadRequestException(
+        'Bad request. albumId is invalid (not uuid)',
+      );
+    }
+    const album = await this.albumsService.findOne(id);
+
+    if (!album) {
+      throw new NotFoundException('Album not found');
+    }
+    return album;
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateAlbumDto: UpdateAlbumDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateAlbumDto: UpdateAlbumDto,
+  ) {
     if (!uuidValidate(id)) {
       throw new BadRequestException(
         'Bad request. albumId is invalid (not uuid)',
@@ -57,18 +74,27 @@ export class AlbumsController {
         );
       }
     }
-    const album = this.albumsService.update(id, updateAlbumDto);
+    const album = await this.albumsService.update(id, updateAlbumDto);
+
     if (!album) {
       throw new NotFoundException('Album not found');
     }
-
-    console.log('album', album);
     return album;
   }
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@Param('id') id: string) {
-    return this.albumsService.remove(id);
+  async remove(@Param('id') id: string) {
+    if (!uuidValidate(id)) {
+      throw new BadRequestException(
+        'Bad request. albumId is invalid (not uuid)',
+      );
+    }
+    const album = await this.albumsService.remove(id);
+
+    if (!album) {
+      throw new NotFoundException('Album not found');
+    }
+    return album;
   }
 }

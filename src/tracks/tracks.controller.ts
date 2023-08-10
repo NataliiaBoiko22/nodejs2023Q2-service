@@ -11,36 +11,51 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { validate as uuidValidate } from 'uuid';
+import { StatusCodes } from 'http-status-codes';
 import { TracksService } from './tracks.service';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 
-@Controller({ path: 'track' })
+@Controller('track')
 export class TracksController {
-  constructor(private readonly tracksService: TracksService) {}
+  constructor(private readonly trackService: TracksService) {}
 
   @Post()
-  create(@Body() createTrackDto: CreateTrackDto) {
+  async create(@Body() createTrackDto: CreateTrackDto) {
     if (!createTrackDto.name || !createTrackDto.duration) {
       throw new BadRequestException(
         'Bad request. body does not contain required fields',
       );
     }
-    return this.tracksService.create(createTrackDto);
+    return this.trackService.create(createTrackDto);
   }
 
   @Get()
-  findAll() {
-    return this.tracksService.findAll();
+  @HttpCode(StatusCodes.OK)
+  async findAll() {
+    return this.trackService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tracksService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    if (!uuidValidate(id)) {
+      throw new BadRequestException(
+        'Bad request. trackId is invalid (not uuid)',
+      );
+    }
+    const track = await this.trackService.findOne(id);
+    if (!track) {
+      throw new NotFoundException('Track not found');
+    }
+    return track;
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateTrackDto: UpdateTrackDto) {
+  async update(
+    @Param('id')
+    id: string,
+    @Body() updateTrackDto: UpdateTrackDto,
+  ) {
     if (!uuidValidate(id)) {
       throw new BadRequestException(
         'Bad request. trackId is invalid (not uuid)',
@@ -51,7 +66,7 @@ export class TracksController {
         'Bad request. body does not contain required fields',
       );
     }
-    const track = this.tracksService.update(id, updateTrackDto);
+    const track = await this.trackService.update(id, updateTrackDto);
     if (!track) {
       throw new NotFoundException('Track not found');
     }
@@ -59,16 +74,21 @@ export class TracksController {
   }
 
   @Delete(':id')
-  @HttpCode(204)
-  remove(@Param('id') id: string) {
+  @HttpCode(StatusCodes.NO_CONTENT)
+  async remove(
+    @Param('id')
+    id: string,
+  ) {
     if (!uuidValidate(id)) {
       throw new BadRequestException(
         'Bad request. trackId is invalid (not uuid)',
       );
     }
-    const track = this.tracksService.remove(id);
+    const track = await this.trackService.remove(id);
+
     if (!track) {
       throw new NotFoundException('Track not found');
     }
+    return track;
   }
 }
