@@ -27,41 +27,9 @@ git checkout docker-database-orm
 ```
 npm install
 ```
-
 ## Running application
-
-Before starting app create `.env` file  using  `.env.example` as reference.
 ```
-npm start
-```
-You can see ` Server started at http://localhost:4000`
-Then open new terminal.
-
-After starting the app on port (4000 as default) you can open
-in your browser OpenAPI documentation by typing http://localhost:4000/doc/.
-
-## Testing
-
-To run all tests without authorization
-```
-npm run test
-```
-
-To run only one of all test suites
-```
-npm run test -- <path to suite>
-```
-### Auto-fix and format
-```
-npm run lint
-```
-```
-npm run format
-```
-
-### Running application with Docker
-
-1. Before starting application run Docker Desktop
+1. Before starting application run Docker Desktop  and  create `.env` file  using  `.env.example` as reference.
 2. Build and start app
 ```
 npm run docker
