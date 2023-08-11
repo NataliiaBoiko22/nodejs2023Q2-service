@@ -26,6 +26,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "docker": "docker-compose up --build",
+    "docker:test": "docker-compose exec nodejs2023q2-service-app sh -c npm run test",
     "docker:scan": "docker scout cves nodejs2023q2-service-app && docker scout cves nodejs2023q2-service-postgres"
   },
   "dependencies": {
