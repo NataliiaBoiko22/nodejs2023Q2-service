@@ -14,6 +14,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "start:migration_dev": "npm run build && npm run typeorm migration:generate src/migration/migration && npm run typeorm migration:run && npm run start:dev",
+    "start:migration_run": "npm run typeorm migration:run && npm run start:dev",
     "typeorm": "typeorm-ts-node-esm -d ./src/datasource.ts",
     "migration:create": "npm run build && npm run typeorm migration:create -- migration",
     "migration:generate": "npm run build && npm run typeorm migration:generate src/migration/migration",
@@ -24,7 +25,8 @@
     "test:auth": "cross-env TEST_MODE=auth jest --config ./test/jest-e2e.json --noStackTrace --runInBand",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand"
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "docker:scan": "docker scout cves nodejs2023q2-service-app && docker scout cves nodejs2023q2-service-postgres"
   },
   "dependencies": {
     "@nestjs/common": "^8.0.0",

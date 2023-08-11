@@ -14,7 +14,7 @@ async function bootstrap() {
   SwaggerModule.setup('doc', app, document);
   const port = process.env.PORT || 4000;
   await app.listen(port);
-  console.log(`Server ready at http://localhost:${port}`);
+  console.log(`🚀 Server started at http://localhost:${port}`);
 }
 function applyGlobalInterceptors(app) {
   const reflector = app.get(Reflector);
