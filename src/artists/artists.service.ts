@@ -1,66 +1,51 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
-import { validate } from 'uuid';
 import { Artist } from './entities/artist.entity';
-import { InMemoryDB } from 'src/db/dbInMemory';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 @Injectable()
 export class ArtistsService {
-  create(createArtistDto: CreateArtistDto) {
-    if (createArtistDto.name && createArtistDto.grammy) {
-      const newArtist = new Artist(createArtistDto);
-      InMemoryDB.artists.push(newArtist);
-      return newArtist;
-    } else {
-      return null;
-    }
+  constructor(
+    @InjectRepository(Artist)
+    private artistService: Repository<Artist>,
+  ) {}
+  async create(createArtistDto: CreateArtistDto): Promise<Artist> {
+    const artist = this.artistService.create(createArtistDto);
+
+    return await this.artistService.save(artist);
   }
 
-  findAll() {
-    return InMemoryDB.artists;
+  async findAll(): Promise<Array<Artist>> {
+    return await this.artistService.find();
   }
 
-  findOne(id: string) {
-    const artist = InMemoryDB.artists.find((element) => element.id === id);
-    if (!validate(id)) {
-      throw new BadRequestException();
-    }
+  async findOne(id: string): Promise<Artist | null> {
+    return await this.artistService.findOneBy({ id });
+  }
+
+  async update(
+    id: string,
+    updateArtistDto: UpdateArtistDto,
+  ): Promise<Artist | null> {
+    const artist = await this.artistService.findOneBy({ id });
+
     if (!artist) {
-      throw new NotFoundException();
-    }
-    return artist;
-  }
-
-  update(id: string, updateArtistDto: UpdateArtistDto) {
-    const index = InMemoryDB.artists.findIndex((p) => p.id === id);
-    if (index >= 0) {
-      const upArtist = {
-        id,
-        name: updateArtistDto.name
-          ? updateArtistDto.name
-          : InMemoryDB.artists[index].name,
-        grammy:
-          typeof updateArtistDto.grammy === 'boolean'
-            ? updateArtistDto.grammy
-            : InMemoryDB.artists[index].grammy,
-      };
-      InMemoryDB.artists[index] = upArtist;
-      return upArtist;
-    } else {
       return null;
     }
+
+    await this.artistService.update({ id }, updateArtistDto);
+
+    return await this.artistService.findOneBy({ id });
   }
 
-  remove(id: string) {
-    const artist = this.findOne(id);
-    InMemoryDB.setArtistIdtoNull(artist.id);
-    InMemoryDB.artists = InMemoryDB.artists.filter(
-      (artist) => artist.id !== id,
-    );
-    return artist;
+  async remove(id: string): Promise<DeleteResult> {
+    const artist = await this.artistService.findOneBy({ id });
+
+    if (!artist) {
+      return null;
+    }
+
+    return await this.artistService.delete({ id });
   }
 }

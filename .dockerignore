@@ -1,0 +1,12 @@
+/dist
+/node_modules
+.git
+Dockerfile
+.md
+/logs/*.log
+pgdata
+pg_data
+.idea
+.helpers/
+
+.env

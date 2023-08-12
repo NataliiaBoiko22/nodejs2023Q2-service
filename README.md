@@ -1,4 +1,5 @@
 # Home Library Service
+[Task description](https://github.com/AlreadyBored/nodejs-assignments/blob/main/assignments/rest-service/assignment.md)
 
 ## Prerequisites
 
@@ -8,65 +9,48 @@
 ## Downloading
 
 ```
-git clone {repository URL}
+git clone https://github.com/NataliiaBoiko22/nodejs2023Q2-service.git
+```
+### Move to the app folder
+
+```
+cd nodejs2023Q2-service
+```
+
+### Switch to the necessary branch
+
+```
+git checkout docker-database-orm
 ```
 
 ## Installing NPM modules
-
 ```
 npm install
 ```
-
 ## Running application
-
 ```
-npm start
+1. Before starting application run Docker Desktop  and  create `.env` file  using  `.env.example` as reference.
+2. Build and start app:
 ```
-
-After starting the app on port (4000 as default) you can open
-in your browser OpenAPI documentation by typing http://localhost:4000/doc/.
-For more information about OpenAPI/Swagger please visit https://swagger.io/.
-
-## Testing
-
-After application running open new terminal and enter:
-
-To run all tests without authorization
-
+npm run docker
 ```
-npm run test
+You can see ` Server started at http://localhost:4000`
+Then open new terminal.
+
+3. To run all tests without authorization
+```
+npm run docker:test   or    npm run test
 ```
 
-To run only one of all test suites
-
+4. Vulnerability scanning for images: 
 ```
-npm run test -- <path to suite>
+npm run docker:scan 
 ```
+### Working with the application
 
-To run all test with authorization
+You can work with the application using Postman and OpenAPI documentation by typing http://localhost:4000/doc/.
 
-```
-npm run test:auth
-```
+### Download images from repository on Docker Hub
 
-To run only specific test suite with authorization
-
-```
-npm run test:auth -- <path to suite>
-```
-
-### Auto-fix and format
-
-```
-npm run lint
-```
-
-```
-npm run format
-```
-
-### Debugging in VSCode
-
-Press <kbd>F5</kbd> to debug.
-
-For more information, visit: https://code.visualstudio.com/docs/editor/debugging
+docker pull nataliiaboiko/nodejs2023q2-service-app:latest
+docker pull nataliiaboiko/nodejs2023q2-service-postgres:latest

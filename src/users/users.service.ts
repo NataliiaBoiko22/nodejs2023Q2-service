@@ -1,72 +1,71 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { compare, hash } from 'bcrypt';
 import { User } from './entities/user.entity';
-import { InMemoryDB } from 'src/db/dbInMemory';
-const FORBIDDEN_STATUS = 403;
-
+import { DeleteResult, Repository } from 'typeorm';
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    const newUser = new User(createUserDto);
-    InMemoryDB.users.push(newUser);
-    const { id, login, version, createdAt, updatedAt } = newUser;
-    return { id, login, version, createdAt, updatedAt };
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
+
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    const user = this.userRepository.create({
+      login: createUserDto.login,
+      password: await hash(
+        createUserDto.password,
+        Number(process.env.CRYPT_SALT),
+      ),
+    });
+
+    return await this.userRepository.save(user);
   }
 
-  findAll() {
-    if (InMemoryDB.users.length === 0) {
-      return [];
-    }
-    return InMemoryDB.users;
+  async findAll(): Promise<Array<User>> {
+    return await this.userRepository.find();
   }
 
-  findOne(id: string) {
-    const user: User | undefined = InMemoryDB.users.find(
-      (user: User) => user.id === id,
-    );
+  async findByLogin(login: string): Promise<User> {
+    return await this.userRepository.findOneBy({ login });
+  }
 
-    if (user) {
-      return user;
-    } else {
+  async findOne(id: string): Promise<User> {
+    return await this.userRepository.findOneBy({ id });
+  }
+
+  async update(
+    id: string,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<User | string> {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
       return null;
     }
+    if (!(await compare(updatePasswordDto.oldPassword, user.password))) {
+      throw new ForbiddenException('oldPassword is wrong');
+    }
+    const userUpdated = {
+      password: await hash(
+        updatePasswordDto.newPassword,
+        Number(process.env.CRYPT_SALT),
+      ),
+    };
+
+    await this.userRepository.update({ id }, userUpdated);
+
+    return await this.userRepository.findOneBy({ id });
   }
 
-  updatePassword(id: string, updatePasswordDto: UpdatePasswordDto) {
-    const index = InMemoryDB.users.findIndex((p) => p.id === id);
-    if (index >= 0) {
-      const user = InMemoryDB.users[index];
+  async remove(id: string): Promise<DeleteResult> {
+    const user = await this.userRepository.findOneBy({ id });
 
-      if (updatePasswordDto.oldPassword === user.password) {
-        const upUserWithoutpass = {
-          id,
-          login: user.login,
-          version: +user.version + 1,
-          createdAt: user.createdAt,
-          updatedAt: +Date.now(),
-        };
-        InMemoryDB.users[index] = {
-          ...upUserWithoutpass,
-          password: updatePasswordDto.newPassword,
-        };
-        return upUserWithoutpass;
-      } else {
-        return FORBIDDEN_STATUS;
-      }
-    } else {
+    if (!user) {
       return null;
     }
-  }
 
-  remove(id: string) {
-    const user = this.findOne(id);
-
-    if (user) {
-      InMemoryDB.users = InMemoryDB.users.filter((u: User) => u.id !== id);
-      return true;
-    } else {
-      return null;
-    }
+    return await this.userRepository.delete({ id });
   }
 }

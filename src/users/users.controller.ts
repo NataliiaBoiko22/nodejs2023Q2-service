@@ -8,15 +8,13 @@ import {
   Delete,
   NotFoundException,
   BadRequestException,
-  ForbiddenException,
   HttpCode,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-user.dto';
 import { validate as uuidValidate } from 'uuid';
-const FORBIDDEN_STATUS = 403;
-
+import { StatusCodes } from 'http-status-codes';
 @Controller({ path: 'user' })
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -38,40 +36,44 @@ export class UsersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    if (!uuidValidate(id)) {
-      throw new BadRequestException(
-        'Bad request. userId is invalid (not uuid)',
-      );
-    }
-    const user = this.usersService.findOne(id);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
-  }
-
-  @Put(':id')
-  updatePassword(
-    @Param('id') id: string,
-    @Body() updatePasswordDto: UpdatePasswordDto,
+  @HttpCode(StatusCodes.OK)
+  async findOne(
+    @Param('id')
+    id: string,
   ) {
     if (!uuidValidate(id)) {
       throw new BadRequestException(
         'Bad request. userId is invalid (not uuid)',
       );
     }
-    if (!updatePasswordDto.oldPassword || !updatePasswordDto.newPassword) {
+    const user = await this.usersService.findOne(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+  @Put(':id')
+  async updatePassword(
+    @Param('id') id: string,
+    @Body() { oldPassword, newPassword }: UpdatePasswordDto,
+  ) {
+    if (!uuidValidate(id)) {
+      throw new BadRequestException(
+        'Bad request. userId is invalid (not uuid)',
+      );
+    }
+    if (!oldPassword || !newPassword) {
       throw new BadRequestException(
         'Bad request. Body does not contain required fields.',
       );
     }
-    const user = this.usersService.updatePassword(id, updatePasswordDto);
-    if (user === FORBIDDEN_STATUS) {
-      throw new ForbiddenException('oldPassword is wrong');
-    }
-    if (user === null) {
+    const user = await this.usersService.update(id, {
+      oldPassword,
+      newPassword,
+    });
+    if (!user) {
       throw new NotFoundException('User not found');
     }
     return user;
@@ -79,15 +81,21 @@ export class UsersController {
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@Param('id') id: string) {
+  async remove(
+    @Param('id')
+    id: string,
+  ) {
     if (!uuidValidate(id)) {
       throw new BadRequestException(
         'Bad request. userId is invalid (not uuid)',
       );
     }
-    const user = this.usersService.remove(id);
+    const user = await this.usersService.remove(id);
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    return user;
   }
 }

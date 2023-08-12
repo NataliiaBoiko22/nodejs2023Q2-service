@@ -1,11 +1,18 @@
-import { v4 as uuidv4 } from 'uuid';
-import { CreateArtistDto } from '../dto/create-artist.dto';
-export class Artist {
-  id = uuidv4();
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { IArtist } from '../../interfaces/interfase';
+
+@Entity('artists')
+export class Artist implements IArtist {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
   name: string;
+
+  @Column({ default: false })
   grammy: boolean;
-  constructor(data: CreateArtistDto) {
-    this.name = data.name;
-    this.grammy = data.grammy;
+
+  constructor(artist: Partial<Artist>) {
+    Object.assign(this, artist);
   }
 }

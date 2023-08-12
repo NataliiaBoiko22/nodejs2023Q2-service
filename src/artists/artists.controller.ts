@@ -17,30 +17,48 @@ import { validate as uuidValidate } from 'uuid';
 
 @Controller({ path: 'artist' })
 export class ArtistsController {
-  constructor(private readonly artistsService: ArtistsService) {}
+  constructor(private readonly artistService: ArtistsService) {}
 
   @Post()
-  create(@Body() createArtistDto: CreateArtistDto) {
+  async create(@Body() createArtistDto: CreateArtistDto) {
     if (!createArtistDto.name || !createArtistDto.grammy) {
       throw new BadRequestException(
         'Bad request. body does not contain required fields',
       );
     }
-    return this.artistsService.create(createArtistDto);
+    return await this.artistService.create(createArtistDto);
   }
 
   @Get()
-  findAll() {
-    return this.artistsService.findAll();
+  async findAll() {
+    return await this.artistService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.artistsService.findOne(id);
+  async findOne(
+    @Param('id')
+    id: string,
+  ) {
+    if (!uuidValidate(id)) {
+      throw new BadRequestException(
+        'Bad request. artistId is invalid (not uuid)',
+      );
+    }
+    const artist = await this.artistService.findOne(id);
+
+    if (!artist) {
+      throw new NotFoundException('Artist not found');
+    }
+
+    return artist;
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateArtistDto: UpdateArtistDto) {
+  async update(
+    @Param('id')
+    id: string,
+    @Body() updateArtistDto: UpdateArtistDto,
+  ) {
     if (!uuidValidate(id)) {
       throw new BadRequestException(
         'Bad request. artistId is invalid (not uuid)',
@@ -56,26 +74,29 @@ export class ArtistsController {
         'Bad request. body does not contain required fields',
       );
     }
+    const artist = await this.artistService.update(id, updateArtistDto);
 
-    const artist = this.artistsService.update(id, updateArtistDto);
-    if (artist === null) {
+    if (!artist) {
       throw new NotFoundException('Artist not found');
     }
+
     return artist;
   }
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     if (!uuidValidate(id)) {
       throw new BadRequestException(
         'Bad request. artistId is invalid (not uuid)',
       );
     }
-    const artist = this.artistsService.remove(id);
+    const artist = await this.artistService.remove(id);
+
     if (!artist) {
       throw new NotFoundException('Artist not found');
     }
+
     return artist;
   }
 }
