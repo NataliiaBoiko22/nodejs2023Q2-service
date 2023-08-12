@@ -30,7 +30,7 @@ npm install
 ## Running application
 ```
 1. Before starting application run Docker Desktop  and  create `.env` file  using  `.env.example` as reference.
-2. Build and start app
+2. Build and start app:
 ```
 npm run docker
 ```
@@ -39,7 +39,7 @@ Then open new terminal.
 
 3. To run all tests without authorization
 ```
-npm run docker:test
+npm run docker:test   or    npm run test
 ```
 
 4. Vulnerability scanning for images: 
@@ -50,3 +50,7 @@ npm run docker:scan
 
 You can work with the application using Postman and OpenAPI documentation by typing http://localhost:4000/doc/.
 
+### Download images from repository on Docker Hub
+
+docker pull nataliiaboiko/nodejs2023q2-service-app:latest
+docker pull nataliiaboiko/nodejs2023q2-service-postgres:latest
