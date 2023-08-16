@@ -1,34 +1,35 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  ForbiddenException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
-
-@Controller('auth')
+import { CreateUserDto } from '../users/dto/create-user.dto';
+import { Public } from './guards/public';
+@Controller({ path: 'auth' })
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  @Public()
+  @Post('signup')
+  @HttpCode(201)
+  async create(@Body() createUserDto: CreateUserDto) {
+    await this.authService.signup(createUserDto);
+    return { message: 'User created successfully' };
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
-  }
+  @Public()
+  @Post('login')
+  @HttpCode(201)
+  async login(@Body() createAuthDto: CreateAuthDto) {
+    const jwt = await this.authService.login(createAuthDto);
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+    if (!jwt) {
+      throw new ForbiddenException('Incorrect login or password');
+    }
+    return jwt;
   }
 }

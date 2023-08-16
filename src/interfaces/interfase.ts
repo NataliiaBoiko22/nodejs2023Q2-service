@@ -29,3 +29,25 @@ export interface IFavorites {
   artists: Array<IArtist>;
   tracks: Array<ITrack>;
 }
+
+export interface ICreateJwTToken {
+  id: string;
+  login: string;
+  isRefresh?: boolean;
+}
+export interface ITokenAnswer {
+  accessToken: string;
+  refreshToken: string;
+}
+export interface IJWTData {
+  id: string;
+  login: string;
+  iat: number;
+  exp: number;
+  isRefresh?: boolean;
+}
+
+export interface ILoginUserData {
+  login: string;
+  password: string;
+}
