@@ -30,12 +30,12 @@ export interface IFavorites {
   tracks: Array<ITrack>;
 }
 
-export interface ICreateJwTToken {
+export interface IJwTToken {
   id: string;
   login: string;
   isRefresh?: boolean;
 }
-export interface ITokenAnswer {
+export interface IToken {
   accessToken: string;
   refreshToken: string;
 }
@@ -45,9 +45,4 @@ export interface IJWTData {
   iat: number;
   exp: number;
   isRefresh?: boolean;
-}
-
-export interface ILoginUserData {
-  login: string;
-  password: string;
 }

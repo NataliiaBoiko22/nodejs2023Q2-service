@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
 import { UsersService } from 'src/users/users.service';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { User } from 'src/users/entities/user.entity';
-import { ITokenAnswer } from 'src/interfaces/interfase';
+import { IToken } from 'src/interfaces/interfase';
 import { compare } from 'bcrypt';
-import { JwtPayload } from 'jsonwebtoken';
+import { UpdateAuthDto } from './dto/update-auth.dto';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { IJwTToken } from 'src/interfaces/interfase';
+import { IJWTData } from 'src/interfaces/interfase';
 
 @Injectable()
 export class AuthService {
@@ -14,53 +16,69 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async getRefreshToken(jwtPayload: JwtPayload) {
-    const options = {
-      secret: process.env.JWT_SECRET_KEY,
-      expiresIn: process.env.TOKEN_REFRESH_EXPIRE_TIME,
-    };
-    return this.jwtService.sign(jwtPayload, options);
-  }
-
-  private validateUser = async (
+  private async validateUser(
     login: string,
     password: string,
-  ): Promise<User | null> => {
+  ): Promise<User | null> {
     const user = await this.usersService.findByLogin(login);
 
-    if (!user) {
+    if (!user || !(await compare(password, user.password))) {
       return null;
     }
 
-    const isPasswordMatched = await compare(password, user.password);
-
-    return isPasswordMatched ? user : null;
-  };
-
-  async signup(createAuthDto: CreateAuthDto): Promise<User | null> {
-    return await this.usersService.create(createAuthDto);
+    return user;
   }
 
-  async login(createAuthDto: CreateAuthDto): Promise<ITokenAnswer | null> {
+  private generateToken = async (
+    data: IJwTToken,
+    options?: JwtSignOptions,
+  ): Promise<string> => {
+    return this.jwtService.sign(data, options);
+  };
+
+  private createTokens = async (data: IJwTToken): Promise<IToken> => {
+    const user = { id: data.id, login: data.login };
+    const [accessToken, refreshToken] = await Promise.all([
+      this.generateToken(user),
+      this.generateToken(
+        { ...user, isRefresh: true },
+        { expiresIn: process.env.TOKEN_REFRESH_EXPIRE_TIME },
+      ),
+    ]);
+
+    return { accessToken, refreshToken };
+  };
+
+  async signup(createUserDto: CreateUserDto): Promise<User | null> {
+    return await this.usersService.create(createUserDto);
+  }
+
+  async login(createUserDto: CreateUserDto): Promise<IToken | null> {
     const user = await this.validateUser(
-      createAuthDto.login,
-      createAuthDto.password,
+      createUserDto.login,
+      createUserDto.password,
     );
-    if (!user) {
+    return user
+      ? await this.createTokens({ id: user.id, login: user.login })
+      : null;
+  }
+
+  async refresh(updateAuthDto: UpdateAuthDto): Promise<IToken | null> {
+    try {
+      const jwtData: IJWTData = await this.jwtService.verifyAsync(
+        updateAuthDto.refreshToken,
+        { maxAge: process.env.TOKEN_REFRESH_EXPIRE_TIME },
+      );
+      const { id, login, isRefresh = false } = jwtData;
+      const user = await this.usersService.findByLogin(login);
+
+      if (user && user.id === id && isRefresh) {
+        return await this.createTokens({ id: user.id, login: user.login });
+      }
+
+      return null;
+    } catch (e) {
       return null;
     }
-
-    const jwtPayload: JwtPayload = {
-      login: user.login,
-      sub: user.id,
-    };
-
-    return {
-      accessToken: this.jwtService.sign(jwtPayload, {
-        secret: process.env.JWT_SECRET_KEY,
-        expiresIn: process.env.TOKEN_EXPIRE_TIME,
-      }),
-      refreshToken: await this.getRefreshToken(jwtPayload),
-    };
   }
 }

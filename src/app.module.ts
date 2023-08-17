@@ -10,6 +10,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceConfig } from './ormconfig';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
+import { APP_GUARD } from '@nestjs/core';
+import { AccessAuthGuard } from './auth/guards/access-auth.guard';
 
 @Module({
   imports: [
@@ -23,6 +25,12 @@ import { AuthModule } from './auth/auth.module';
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AccessAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

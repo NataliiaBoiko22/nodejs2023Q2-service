@@ -117,10 +117,44 @@ security:
   - bearerAuth: []
 
 paths:
-  /login:
+  /auth/signup:
     post:
       tags:
-        - Login
+        - Auth
+      security: [ ]
+      summary: Signup
+      description: Signup a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: example
+              properties:
+                login:
+                  type: string
+                  minLength: 3
+                  maxLength: 255
+                  description: Username
+                password:
+                  type: string
+                  format: password
+                  pattern: ^[a-zA-Z0-9]{3,30}
+                  description: Password
+              required:
+                - login
+                - password
+      responses:
+        201:
+          description: Successful signup
+        400:
+          description: Bad request. Body does not contain login or password, or they are not a strings.
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
       security: []
       summary: Login
       description: Logins a user and returns a JWT-token
@@ -152,15 +186,18 @@ paths:
                   token:
                     type: string
                 description: JWT Token
+        400:
+          description: Bad request. Body does not contain login or password, or they are not a strings.
+
         403:
-          description: Incorrect login or password
-  /signup:
+          description: No user with such login, password.
+  /auth/refresh:     
     post:
       tags:
-        - Signup
+        - Auth
       security: [ ]
-      summary: Signup
-      description: Signup a user
+      summary:  Refresh
+      description: Refresh token to get new pair of Access token and Refresh token
       requestBody:
         required: true
         content:
@@ -169,26 +206,20 @@ paths:
               type: object
               title: example
               properties:
-                login:
+                refreshToken:
                   type: string
-                  minLength: 3
-                  maxLength: 255
-                  description: Username
-                password:
-                  type: string
-                  format: password
-                  pattern: ^[a-zA-Z0-9]{3,30}
-                  description: Password
+                  title: example
+                  description: refresh token
               required:
-                - login
-                - password
+                - refreshToken
       responses:
-        204:
-          description: Successful signup
-        400:
-          description: Bad request
-        409:
-          description: Conflict. Login already exists
+        200:
+          description: Successful login
+        401:
+          description: Bad request. Body does not contain refreshToken.
+        403:
+          description: Refresh token is invalid or expired.
+
   /user:
     get:
       tags:

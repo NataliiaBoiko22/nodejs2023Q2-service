@@ -6,9 +6,9 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { Public } from './guards/public';
+import { UpdateAuthDto } from './dto/update-auth.dto';
 @Controller({ path: 'auth' })
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -16,20 +16,28 @@ export class AuthController {
   @Public()
   @Post('signup')
   @HttpCode(201)
-  async create(@Body() createUserDto: CreateUserDto) {
-    await this.authService.signup(createUserDto);
-    return { message: 'User created successfully' };
+  signup(@Body() createUserDto: CreateUserDto) {
+    return this.authService.signup(createUserDto);
   }
 
   @Public()
   @Post('login')
   @HttpCode(201)
-  async login(@Body() createAuthDto: CreateAuthDto) {
-    const jwt = await this.authService.login(createAuthDto);
+  async login(@Body() createUserDto: CreateUserDto) {
+    const login = await this.authService.login(createUserDto);
 
-    if (!jwt) {
-      throw new ForbiddenException('Incorrect login or password');
+    if (!login) {
+      throw new ForbiddenException('No user with such login, password.');
     }
-    return jwt;
+    return login;
+  }
+  @Public()
+  @Post('refresh')
+  async refresh(@Body() updateAuthDto: UpdateAuthDto) {
+    const newToken = this.authService.refresh(updateAuthDto);
+    if (!newToken) {
+      throw new ForbiddenException('Refresh token is invalid or expired');
+    }
+    return newToken;
   }
 }
