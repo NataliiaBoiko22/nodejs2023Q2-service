@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE ${PORT}
 
-CMD ["npm", "run", "start:migration_dev"]
+CMD ["npm", "run", "start:migration_run"]

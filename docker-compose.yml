@@ -24,6 +24,10 @@ services:
       - type: bind
         source: ./src
         target: /app/src
+      - type: bind
+        source: ./logs
+        target: /app/logs
+
       - /app/node_modules
     restart: always
 
