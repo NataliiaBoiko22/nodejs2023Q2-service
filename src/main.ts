@@ -31,5 +31,4 @@ async function loadSwaggerDocument() {
   });
   return parse(docFile);
 }
-
 bootstrap();
